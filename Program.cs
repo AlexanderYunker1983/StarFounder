@@ -16,6 +16,7 @@ namespace StarFounder
         private static string fileName;
         private static readonly List<Centroid> centroids = new List<Centroid>();
 
+        [STAThread]
         static void Main(string[] args)
         {
             var ofd = new OpenFileDialog();
