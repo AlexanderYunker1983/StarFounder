@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using OpenCvSharp;
@@ -19,15 +20,30 @@ namespace StarFounder
         [STAThread]
         static void Main(string[] args)
         {
-            var ofd = new OpenFileDialog();
-            if (ofd.ShowDialog() == DialogResult.OK)
+            if (args.Length == 0)
             {
-                inputFileName = ofd.FileName;
-                fileName = inputFileName.Substring(startIndex: 0, length: inputFileName.Length - 4);
+                var ofd = new OpenFileDialog();
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    inputFileName = ofd.FileName;
+                    fileName = Path.GetFileNameWithoutExtension(inputFileName);
+                }
+                else
+                {
+                    return;
+                }
             }
             else
             {
-                return;
+                if (!File.Exists(args.First()))
+                {
+                    Console.WriteLine("Wrong file name");
+                    Console.ReadLine();
+                    return;
+                }
+
+                inputFileName = args.First();
+                fileName = Path.GetFileNameWithoutExtension(inputFileName);
             }
             var inputImageOriginal = Cv2.ImRead(inputFileName, ImreadModes.Unchanged);
             var workCopy = Cv2.ImRead(inputFileName, ImreadModes.Grayscale);
@@ -75,6 +91,8 @@ namespace StarFounder
                     lineType: LineTypes.AntiAlias);
             }
             Cv2.ImWrite(fileName + "_result.jpg", inputImageOriginal, new ImageEncodingParam(ImwriteFlags.JpegQuality, value: 100));
+            Console.WriteLine($"Estimated time: {deltaTime.TotalSeconds} s");
+            Console.ReadLine();
         }
 
         static void ProceedPixel(int x, int y, Centroid centroid)
