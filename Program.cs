@@ -26,7 +26,7 @@ namespace StarFounder
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
                     inputFileName = ofd.FileName;
-                    fileName = Path.GetFileNameWithoutExtension(inputFileName);
+                    fileName = Path.Combine(Path.GetDirectoryName(inputFileName) ?? string.Empty, Path.GetFileNameWithoutExtension(inputFileName));
                 }
                 else
                 {
@@ -43,7 +43,7 @@ namespace StarFounder
                 }
 
                 inputFileName = args.First();
-                fileName = Path.GetFileNameWithoutExtension(inputFileName);
+                fileName = Path.Combine(Path.GetDirectoryName(inputFileName) ?? string.Empty, Path.GetFileNameWithoutExtension(inputFileName));
             }
             var inputImageOriginal = Cv2.ImRead(inputFileName, ImreadModes.Unchanged);
             var workCopy = Cv2.ImRead(inputFileName, ImreadModes.Grayscale);
