@@ -45,13 +45,18 @@ namespace StarFounder
                 _inputFileName = args.First();
                 _fileName = Path.Combine(Path.GetDirectoryName(_inputFileName) ?? string.Empty, Path.GetFileNameWithoutExtension(_inputFileName));
             }
+
             var inputImageOriginal = Cv2.ImRead(_inputFileName, ImreadModes.Unchanged);
             var workCopy = Cv2.ImRead(_inputFileName, ImreadModes.Grayscale);
+
             _widthOfImage = workCopy.Cols;
             _heightOfImage = workCopy.Rows;
+
             var work = new Mat(new Size(workCopy.Height, workCopy.Width), MatType.CV_8UC1);
+
             Cv2.Transpose(workCopy, work);
             _data = new byte[work.Total() * work.Channels()];
+
             unsafe
             {
                 var pointer = work.DataPointer;
@@ -60,6 +65,7 @@ namespace StarFounder
                     _data[index] = *(pointer + index);
                 }
             }
+
             var startTime = DateTime.Now;
             for (var xIndex = 0; xIndex < _widthOfImage; xIndex++)
             {
@@ -77,9 +83,11 @@ namespace StarFounder
                     }
                 }
             }
+
             var endTime = DateTime.Now;
             var deltaTime = endTime - startTime;
-            foreach (var centroid in Centroids.Where(c => c.PointsCount >= 4))
+
+            foreach (var centroid in Centroids.Where(c => c.PointsCount >= 3))
             {
                 inputImageOriginal.Circle(
                     center: new Point(
@@ -90,6 +98,7 @@ namespace StarFounder
                     thickness: 3,
                     lineType: LineTypes.AntiAlias);
             }
+
             Cv2.ImWrite(_fileName + "_result.jpg", inputImageOriginal, new ImageEncodingParam(ImwriteFlags.JpegQuality, value: 100));
             Console.WriteLine($"Estimated time: {deltaTime.TotalSeconds} s");
             Console.ReadLine();
@@ -99,6 +108,7 @@ namespace StarFounder
         {
             centroid.AddNewPoint(x, y);
             _data[x * _heightOfImage + y] = 0;
+
             var canCheckPixelDown = y + 1 < _heightOfImage;
             if (canCheckPixelDown)
             {
@@ -107,14 +117,18 @@ namespace StarFounder
                     ProceedPixel(x, y + 1, centroid);
                 }
             }
-            if (x + 1 < _widthOfImage)
+
+            var canCheckPixelLeft = x + 1 < _widthOfImage;
+            if (canCheckPixelLeft)
             {
                 if (_data[(x + 1) * _heightOfImage + y] > Threshold)
                 {
                     ProceedPixel(x + 1, y, centroid);
                 }
             }
-            if (y - 1 >= 0)
+
+            var canCheckPixelUp = y - 1 >= 0;
+            if (canCheckPixelUp)
             {
                 if (_data[x * _heightOfImage + y - 1] > Threshold)
                 {
