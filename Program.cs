@@ -9,13 +9,13 @@ namespace StarFounder
 {
     class Program
     {
-        private static byte[] data;
+        private static byte[] _data;
         private const int Threshold = 50;
-        private static int widthOfImage;
-        private static int heightOfImage;
-        private static string inputFileName;
-        private static string fileName;
-        private static readonly List<Centroid> centroids = new List<Centroid>();
+        private static int _widthOfImage;
+        private static int _heightOfImage;
+        private static string _inputFileName;
+        private static string _fileName;
+        private static readonly List<Centroid> Centroids = new List<Centroid>();
 
         [STAThread]
         static void Main(string[] args)
@@ -25,8 +25,8 @@ namespace StarFounder
                 var ofd = new OpenFileDialog();
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
-                    inputFileName = ofd.FileName;
-                    fileName = Path.Combine(Path.GetDirectoryName(inputFileName) ?? string.Empty, Path.GetFileNameWithoutExtension(inputFileName));
+                    _inputFileName = ofd.FileName;
+                    _fileName = Path.Combine(Path.GetDirectoryName(_inputFileName) ?? string.Empty, Path.GetFileNameWithoutExtension(_inputFileName));
                 }
                 else
                 {
@@ -42,44 +42,44 @@ namespace StarFounder
                     return;
                 }
 
-                inputFileName = args.First();
-                fileName = Path.Combine(Path.GetDirectoryName(inputFileName) ?? string.Empty, Path.GetFileNameWithoutExtension(inputFileName));
+                _inputFileName = args.First();
+                _fileName = Path.Combine(Path.GetDirectoryName(_inputFileName) ?? string.Empty, Path.GetFileNameWithoutExtension(_inputFileName));
             }
-            var inputImageOriginal = Cv2.ImRead(inputFileName, ImreadModes.Unchanged);
-            var workCopy = Cv2.ImRead(inputFileName, ImreadModes.Grayscale);
-            widthOfImage = workCopy.Cols;
-            heightOfImage = workCopy.Rows;
+            var inputImageOriginal = Cv2.ImRead(_inputFileName, ImreadModes.Unchanged);
+            var workCopy = Cv2.ImRead(_inputFileName, ImreadModes.Grayscale);
+            _widthOfImage = workCopy.Cols;
+            _heightOfImage = workCopy.Rows;
             var work = new Mat(new Size(workCopy.Height, workCopy.Width), MatType.CV_8UC1);
             Cv2.Transpose(workCopy, work);
-            data = new byte[work.Total() * work.Channels()];
+            _data = new byte[work.Total() * work.Channels()];
             unsafe
             {
                 var pointer = work.DataPointer;
                 for (var index = 0; index < work.Total() * work.Channels(); index++)
                 {
-                    data[index] = *(pointer + index);
+                    _data[index] = *(pointer + index);
                 }
             }
             var startTime = DateTime.Now;
-            for (var xIndex = 0; xIndex < widthOfImage; xIndex++)
+            for (var xIndex = 0; xIndex < _widthOfImage; xIndex++)
             {
-                for (var yIndex = 0; yIndex < heightOfImage; yIndex++)
+                for (var yIndex = 0; yIndex < _heightOfImage; yIndex++)
                 {
-                    if (data[xIndex * heightOfImage + yIndex] > Threshold)
+                    if (_data[xIndex * _heightOfImage + yIndex] > Threshold)
                     {
                         var centroid = new Centroid();
                         ProceedPixel(xIndex, yIndex, centroid);
-                        centroids.Add(centroid);
+                        Centroids.Add(centroid);
                     }
                     else
                     {
-                        data[xIndex * heightOfImage + yIndex] = 0;
+                        _data[xIndex * _heightOfImage + yIndex] = 0;
                     }
                 }
             }
             var endTime = DateTime.Now;
             var deltaTime = endTime - startTime;
-            foreach (var centroid in centroids.Where(c => c.PointsCount >= 4))
+            foreach (var centroid in Centroids.Where(c => c.PointsCount >= 4))
             {
                 inputImageOriginal.Circle(
                     center: new Point(
@@ -90,7 +90,7 @@ namespace StarFounder
                     thickness: 3,
                     lineType: LineTypes.AntiAlias);
             }
-            Cv2.ImWrite(fileName + "_result.jpg", inputImageOriginal, new ImageEncodingParam(ImwriteFlags.JpegQuality, value: 100));
+            Cv2.ImWrite(_fileName + "_result.jpg", inputImageOriginal, new ImageEncodingParam(ImwriteFlags.JpegQuality, value: 100));
             Console.WriteLine($"Estimated time: {deltaTime.TotalSeconds} s");
             Console.ReadLine();
         }
@@ -98,25 +98,25 @@ namespace StarFounder
         static void ProceedPixel(int x, int y, Centroid centroid)
         {
             centroid.AddNewPoint(x, y);
-            data[x * heightOfImage + y] = 0;
-            var canCheckPixelDown = y + 1 < heightOfImage;
+            _data[x * _heightOfImage + y] = 0;
+            var canCheckPixelDown = y + 1 < _heightOfImage;
             if (canCheckPixelDown)
             {
-                if (data[x * heightOfImage + y + 1] > Threshold)
+                if (_data[x * _heightOfImage + y + 1] > Threshold)
                 {
                     ProceedPixel(x, y + 1, centroid);
                 }
             }
-            if (x + 1 < widthOfImage)
+            if (x + 1 < _widthOfImage)
             {
-                if (data[(x + 1) * heightOfImage + y] > Threshold)
+                if (_data[(x + 1) * _heightOfImage + y] > Threshold)
                 {
                     ProceedPixel(x + 1, y, centroid);
                 }
             }
             if (y - 1 >= 0)
             {
-                if (data[x * heightOfImage + y - 1] > Threshold)
+                if (_data[x * _heightOfImage + y - 1] > Threshold)
                 {
                     ProceedPixel(x, y - 1, centroid);
                 }
